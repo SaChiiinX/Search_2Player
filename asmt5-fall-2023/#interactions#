@@ -1,0 +1,119 @@
+
+[5] CL-USER(44): stn2
+An STN with 5 tps: A B C D E 
+EDGES: (E 1 A) (D -1 C) (D -2 A) (D 5 E) (C 4 D) (B 2 C) (A 8 E) (A 2 B) 
+[5] CL-USER(45): (fw stn2)
+#2A((6 2 4 8 8) (4 6 2 6 11) (2 4 3 4 9) (-2 0 -1 3 5) (1 3 5 9 9))
+[5] CL-USER(46): stn3
+An STN with 5 tps: A B C D E 
+EDGES: (D 4 E) (D -2 C) (D -2 B) (B -1 A) (A 4 D) 
+[5] CL-USER(47): (fw stn2)
+#2A((6 2 4 8 8) (4 6 2 6 11) (2 4 3 4 9) (-2 0 -1 3 5) (1 3 5 9 9))
+[5] CL-USER(48): stn4
+An STN with 5 tps: A B C D E 
+EDGES: (E -4 A) (D 2 E) (C 3 D) (B 1 C) (A 2 B) 
+[5] CL-USER(49): (fw stn4)
+#2A((4 2 3 6 8) (2 4 1 4 6) (1 3 4 3 5) (-2 0 1 4 2) (-4 -2 -1 2 4))
+[5] CL-USER(50): stn2
+An STN with 5 tps: A B C D E 
+EDGES: (E 1 A) (D -1 C) (D -2 A) (D 5 E) (C 4 D) (B 2 C) (A 8 E) (A 2 B) 
+[5] CL-USER(51): (gen-soln stn2)
+#(12 13 15 18 11)
+[5] CL-USER(52): (is-soln-for? #(12 13 15 18 11) stn2)
+(13 - 12) <=  2
+(11 - 12) <=  8
+(15 - 13) <=  2
+(18 - 15) <=  4
+(12 - 18) <=  -2
+(11 - 18) <=  5
+(15 - 18) <=  -1
+(12 - 11) <=  1
+T
+[5] CL-USER(53): stn3
+An STN with 5 tps: A B C D E 
+EDGES: (D 4 E) (D -2 C) (D -2 B) (B -1 A) (A 4 D) 
+[5] CL-USER(54): (gen-soln stn3)
+#(2 3 2 5 -9)
+[5] CL-USER(55): (is-soln-for? #(2 3 2 5 -9) stn3)
+(5 - 2) <=  4
+(2 - 3) <=  -1
+(3 - 5) <=  -2
+(-9 - 5) <=  4
+(2 - 5) <=  -2
+T
+[5] CL-USER(56): stn4
+An STN with 5 tps: A B C D E 
+EDGES: (E -4 A) (D 2 E) (C 3 D) (B 1 C) (A 2 B) 
+[5] CL-USER(57): (gen-soln stn4)
+#(4 6 7 9 11)
+[5] CL-USER(58): (is-soln-for? #(4 6 7 9 11) stn4)
+(6 - 4) <=  2
+(7 - 6) <=  1
+(9 - 7) <=  3
+(11 - 9) <=  2
+(4 - 11) <=  -4
+T
+[5] CL-USER(63): stn1
+An STN with 5 tps: A B C D E 
+EDGES: (E -1 D) (D 9 E) (D -4 C) (C -2 B) (B 7 E) (B -3 A) (A 15 E) 
+[5] CL-USER(64): (rte stn1 :verbose? t)
+Starting round 0 with now=0 and enableds=(0) 
+  ---> Executing 0 at time 0
+  -- Updating uppers(4) = 15
+  -- Updating lowers(1) = 3
+      -- 1 has become enabled!
+Starting round 1 with now=0 and enableds=(1) 
+  ---> Executing 1 at time 9
+  -- Updating uppers(4) = 16
+  -- Updating lowers(2) = 11
+      -- 2 has become enabled!
+Starting round 2 with now=9 and enableds=(2) 
+  ---> Executing 2 at time 15
+  -- Updating lowers(3) = 19
+      -- 3 has become enabled!
+Starting round 3 with now=15 and enableds=(3) 
+  ---> Executing 3 at time 19
+  -- Updating uppers(4) = 28
+  -- Updating lowers(4) = 20
+      -- 4 has become enabled!
+Starting round 4 with now=19 and enableds=(4) 
+  ---> Executing 4 at time 21
+#(0 9 15 19 21)
+[5] CL-USER(65): (is-soln-for? #(0 9 15 19 21) stn1)
+(21 - 0) <=  15
+NIL
+[5] CL-USER(66): stn2
+An STN with 5 tps: A B C D E 
+EDGES: (E 1 A) (D -1 C) (D -2 A) (D 5 E) (C 4 D) (B 2 C) (A 8 E) (A 2 B) 
+[5] CL-USER(67): (rte stn2 :verbose? t)
+Starting round 0 with now=0 and enableds=(4 2 1 0) 
+  ---> Executing 0 at time 1
+  -- Updating uppers(1) = 3
+  -- Updating uppers(4) = 9
+  -- Updating lowers(3) = 3
+Starting round 1 with now=1 and enableds=(4 2 1) 
+  ---> Executing 1 at time 3
+  -- Updating uppers(2) = 5
+Starting round 2 with now=3 and enableds=(4 2) 
+  ---> Executing 2 at time 4
+  -- Updating uppers(0) = 5
+Starting round 3 with now=4 and enableds=(2) 
+  ---> Executing 3 at time 5
+  -- Updating uppers(3) = 9
+  -- Updating lowers(3) = 6
+      -- 3 has become enabled!
+Starting round 4 with now=5 and enableds=(3) 
+  ---> Executing 4 at time 8
+  -- Updating uppers(4) = 13
+#(1 3 5 8 4)
+[5] CL-USER(68): (is-soln-for? #(1 3 5 8 4) stn2)
+(3 - 1) <=  2
+(4 - 1) <=  8
+(5 - 3) <=  2
+(8 - 5) <=  4
+(1 - 8) <=  -2
+(4 - 8) <=  5
+(5 - 8) <=  -1
+(1 - 4) <=  1
+T
+[5] CL-USER(69): (rte stn2)

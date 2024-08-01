@@ -1,0 +1,30 @@
+This is UCPOP,  release 4.0.
+
+  This README has been abridged for use in CS 182.
+
+  (c) 1990-1995 Copyright (c) University of Washington
+  Written by Tony Barrett, Dave Christianson, Chung Kwok, J Scott Penberthy,
+  and Daniel Weld.
+
+  All rights reserved. Use of this software is permitted for non-commercial
+  research purposes, and it may be copied only for that use.  All copies must
+  include this copyright message.  This software is made available AS IS, and
+  neither the authors nor the University of Washington make any warranty about
+  the software or its performance.
+
+  When you first acquire this software please send mail to 
+  bug-ucpop@cs.washington.edu; the same address should be used for problems.
+
+**************** Description 
+
+This version (4.0) has minor bug fixes and some significant enhancements
+for the planner - for example inclusion of the PDB planner
+visualization/debugging tool.  UCPOP runs on most Lisp systems.  PDB
+requires CLIM 2.0.
+
+This minor revision (4.0.6) fixes many loading bugs and some geometry problems
+of PDB.  A new implementation of ZLIFO is included,  for details please refer
+to ./doc/zlifo.doc.  
+
+**************** End of README
+ 

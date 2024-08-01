@@ -1,0 +1,352 @@
+CMPU-365, Fall 2023
+Asmt. 1
+Due:  Thursday, Sept. 14 @ Noon
+
+  ======================================================================
+    This assignment will be done in groups.  You will be notified of
+    the groups via email.  You may only collaborate with students in
+    your assigned group.  Only one submission per group (printouts and
+    electronically, as described later on in these instructions).
+    -------------------------------------------------------------------
+    NOTE:  Work on GEN-SEARCH and the EIGHTS tile-puzzle domain can
+             be done in parallel/independently.  Take advantage of that!
+    NOTE:  Remeber to follow the Style Sheet guidelines for coding
+             in Lisp!
+  ======================================================================
+    
+For this assignment, you will:
+
+  (1) complete an implementation of the general tree search algorithm
+      discussed in class, and seen in "newChapThreeSlides.pdf";
+
+  (2) complete an implementation of the eights-tile-puzzle domain
+      discussed in class; and
+
+  (3) use the general search algorithm to compare the performance of
+      breadth-first and depth-first search on a simple "vacuum-world"
+      domain (given to you) and your eights-tile-puzzle domain.
+      
+To give you something to test your search algorithms on before
+completing the implementation of the eights-tile-puzzle domain (and to
+give you guidance on what you need to do to implement such a domain),
+you are provided with an implementation of a simple "vacuum-world"
+domain.
+
+You should begin by creating a directory for this assignment.  CD into
+that directory and execute the following command to copy the relevant
+files into your directory:
+
+  cp  -r  ~cs365/public_html/asmt1-fall-2023  .
+
+Note:  The period at the end is needed!
+
+You should see the following files:
+
+   asmt-helper.lisp           
+      defines functions to generate nice looking output.
+      defines COMPILE-AND-LOAD and MAKER that facilitate
+        re-compiling and re-loading your files for this assignment.
+
+   basic-defns.lisp
+      defines:  the SEARCH-PROBLEM, NODE and RESULTS structs;
+                the GEN-SEARCH "wrapper function" (you will
+                  define its helper function GEN-SEARCH-GUTS); and
+                the queuing functions for depth-first and breadth-first
+                  search algorithms.
+
+   gen-search-starter.lisp
+      provides templates for the CYCLE?, MAKE-ROOT-NODE, EXPAND and
+        GEN-SEARCH-GUTS functions that you need to define to make
+        GEN-SEARCH work!
+
+   vw.lisp
+      implements the 4-by-4 version of a simple VACUUM-WORLD domain.
+
+   test-vw.lisp
+      basic functions for testing the vacuum-world domain.
+
+   eights.lisp
+      skeletal code for an implementation of the EIGHTS tile puzzle domain.
+
+   test-eights.lisp
+      basic functions for testing the eights tile puzzle domain.
+      
+   testing.lisp -- this is the main testing file.
+        loading this file causes all files to be compiled and loaded,
+        and all tests to be run: on vacuum-world and, after you
+        implement it, the eights-tile-puzzle domain.
+
+NOTE:  You should NOT modify ANY of the following files:
+
+          asmt-helper.lisp
+          basic-defns.lisp
+          vw.lisp (except to try doing search on different problem instances)
+          test-vw.lisp
+          test-eights.lisp
+	  
+       You will NEED to modify the following:
+
+          gen-search-starter.lisp
+	  eights.lisp
+          testing.lisp     
+       
+TO BEGIN:  CD into your assignment directory (that now contains all of
+  the above files).  Fire up ACLEMACS and type the following expression:
+
+    (load "testing.lisp" :verbose nil)
+
+  That should compile and load all of the files for this assignment.
+  These files will all compile, but there will be warning messages
+  about variables not being used (because the functions you must write
+  have dummy bodies).  Those warnings will go away as you implement the
+  functions described below.  
+
+  The above expression will also attempt to run the depth-first and
+  breadth-first search algorithms on the vacuum-world domain.  However,
+  the results will be unsatisfying because you haven't yet implemented
+  the GEN-SEARCH-GUTS function!
+
+Exploring the Vacuum World domain:
+
+   Open up "vw.lisp".  It contains an implementation of the vacuum-world
+   domain.  It uses a global constant to hold the size of the vacuum-world.
+   Currently, it is 4x4.  It defines a VW-STATE data structure that records
+   the robot's location and the locations of all the dirty squares.  (This
+   data structure can be defined in many many different ways, some more
+   efficient/convenient than others.)  Notice that the PRINT-VW-STATE function
+   is automatically linked as the printing function for instances of the
+   VW-STATE data structure.  You can test this as follows:
+
+      (format t "Here's a state: ~A.  Pretty cool, eh?!~%" 
+                (make-vw-state :dirt-locations '((1 2) (2 2))))
+
+   The VW-STATE-EQUAL? function determines whether two given VW-STATE
+   structs have the same contents.  VW-GOAL-TEST returns T if the given
+   STATE has no dirty locations.  The actions in this domain are: NORTH,
+   SOUTH, EAST, WEST and VACUUM.  The first four are defined using a
+   helper function, DO-MOVE.  DO-MOVE uses a helper function VALID-XY,
+   which determines whether the given move would be legal.  VACUUM is
+   defined separately.
+
+   Feel free to create some sample states and apply various functions
+   to them to see what happens.  Also, look at the code to see how they
+   are implemented using Lisp.
+
+
+Next, open up the "basic-defns.lisp" file.  It defines the following:
+
+   The SEARCH-PROBLEM, NODE, and RESULTS data structures.
+       -- notice how the :print-function syntax is used to ensure
+          that NODEs and RESULTS instances will be displayed nicely
+          in the Interactions Window.
+
+   The functions:
+
+        BUILD-PATH  -- traces path from current node back to root node,
+                       returns the accumulated list of nodes.
+                       NOTE:  LABELS is Lisp's version of Scheme's LETREC.
+
+        PRINT-RESULTS --  displays information about a given search effort 
+
+        GEN-SEARCH -- This is a wrapper function for the recursive
+                      helper function, GEN-SEARCH-GUTS.  (You will
+                      define GEN-SEARCH-GUTS.) The wrapper function
+                      initializes the node-count variable to 0,
+                      records the starting time, calls the helper
+                      function (which does the search), determines
+                      whether the search was successful or not, and
+                      then prints some statistics.
+
+        FRONT-ENQUEUE!, END-ENQUEUE! -- Queuing functions that put
+            newly generated child nodes at the front or end of the
+            search queue.  These functions are DESTRUCTIVE for reasons
+            of efficiency.
+
+            ==> All of the code you write should be NON-DESTRUCTIVE!!
+
+        BREADTH-FIRST-SEARCH, DEPTH-FIRST-SEARCH -- Wrapper functions
+            that call GEN-SEARCH with an appropriate queuing function.
+
+Next, open up "gen-search-starter.lisp".  It contains skeletal definitions
+for the following functions:
+
+        CYCLE? -- Used to determine whether a given state already
+                  appears in the path of nodes from the given node
+                  back to the root node.  Look at BUILD-PATH for ideas.
+
+        MAKE-ROOT-NODE -- Create the root node for a new search tree
+                     using information in a given SEARCH-PROBLEM struct.
+
+        EXPAND -- Given a node and a list of actions, generate a list of
+                  child nodes.  Each new child node has a state that
+                  is obtained by applying one of the actions to the
+                  current state (i.e., the state associated with the
+                  given node).  However, EXPAND does not create nodes for
+                  repeat states.  It uses CYCLE? to check for repeat
+                  states.  Don't forget to increment NUM-NODES at some
+                  point!
+
+        GEN-SEARCH-GUTS -- This is the function that does the actual
+           tree-search algorithm.  It takes three inputs:
+	      a SEARCH-PROBLEM instance
+	      a queueing function that determines the kind of search
+	        (e.g., depth-first or breadth-first)
+	      a RESULTS instance for keeping track of search stats
+           Your work on this function should focus exclusively on
+	   providing code for the body of the GEN-REC helper function.
+                  
+--------------------------
+  YOUR JOBS
+--------------------------
+ 
+  Flesh out the definitions of the CYCLE?, MAKE-ROOT-NODE, EXPAND and
+  GEN-SEARCH-GUTS functions.  Each of these is described in the
+  "newChapThreeSlides.pdf" posted on the Moodle, and will be discussed
+  in class.  These should all be NON-DESTRUCTIVE.
+
+       NOTE:  If GEN-SEARCH-GUTS is given a destructive queuing 
+              function, like front-enqueue! or end-enqueue!, then
+              the search queue will be destructively modified when
+              these queuing functions are used.  But if given
+              non-destructive queuing functions, then GEN-SEARCH-GUTS
+              should be non-destructive.  See the note about replacing
+              NCONC with APPEND just above the definition of front-enqueue!
+
+  It is strongly recommended that you define your functions in the
+  following order:
+
+       MAKE-ROOT-NODE -- see "test-vw.lisp" for a sample problem to give it
+
+       CYCLE?  --  test this thoroughly on sample inputs before
+                   moving on.  you can create a chain of search
+                   nodes manually to facilitate testing.  be sure
+                   each case works properly.
+
+       EXPAND  --  you can begin by writing this without worrying about
+                   repeated states.  expanding the root node for the
+                   vacuum world problem in "test-vw.lisp" should generate
+                   a list of several nodes.  try it out.  then expand one
+                   of those child nodes.  make sure you don't allow moves
+                   that go out of the world!  (the DO-MOVE function 
+                   returns NIL if a move would've gone out of the world.)
+
+        GEN-SEARCH-GUTS -- Once EXPAND is working, you're ready for this
+                   one.  If the search queue is empty, then you're
+                   done; return NIL.  If the first node in the search
+                   queue is a goal node, then you're done.  Otherwise,
+                   you need recursion.  The recursive case involves
+                   expanding the first node in the queue, asking the
+                   queuing function to insert the newly generated
+                   nodes into the REST of the search queue (i.e., not
+                   including the first node), and then making the
+                   recursive call.
+
+  When you've got all these functions working, then you can begin testing
+  *simple* examples in the vacuum world by evaluating:
+
+    (load "testing.lisp" :verbose nil)
+
+  Feel free to enlarge the size of the room or increase the number of
+  dirty rooms so that your searches take more than a few seconds.  Of
+  course, you don't want to wait around for too long....
+
+-------------
+
+Now, you are ready to implement eights tile-puzzle domain.  (Actually,
+this part can be done in parallel; that's the beauty of problem
+decomposition.)  
+
+See the file, eights.lisp.  It defines data structures and functions
+needed to implement the eights tile-puzzle domain.  Feel free to mimic
+some of the functions provided in "vw.lisp".  Remember that your moves
+shouldn't generate illegal states (e.g., states where the blank goes
+off the puzzle).
+
+  *** Provide bodies for the EIGHTS-EQUAL? and EIGHTS-GOAL? functions
+
+When you have completed the eights.lisp code, uncomment the lines at
+the end of "testing.lisp" to run breadth-first on an easy problem
+instance.  (The MAKE-RANDOM-EIGHTS function, defined in
+"test-eights.lisp", generates a random instance of the puzzle by
+starting from the goal state and doing N random moves.)  Because your
+GEN-SEARCH-GUTS function weeds out repeated states, your search should
+run *really* fast!  You may try to increase the input for
+MAKE-RANDOM-EIGHTS to see how well Breadth-First search does on this
+puzzle.  For larger input values, you may wish to set the ":show?"
+input to DO-EIGHTS-BREADTH to nil so that it doesn't print out too
+much stuff.
+
+  
+-- TESTING --
+
+  Please include the following tests:
+
+    *  The given tests for the vacuum world.
+
+    *  Tests for the EIGHTS puzzle:
+    
+        -- A few tests for breadth-first search with the input to
+           MAKE-RANDOM-EIGHTS around 10 and :show? set to T.  (The
+           lengths of the solutions may be less than 10.)
+
+        -- A few tests for breadth-first search with larger inputs
+	   to MAKE-RANDOM-EIGHTS but with :show? set to NIL (to
+	   suppress a lot of printing).
+
+        -- A couple of tests for depth-first search with :show? set to
+           NIL.  (That's important because DFS may find *REALLY* long
+	   solution paths that you don't want to print out!)
+
+  Generating a results file:
+
+    Start a fresh Aclemacs/Lisp session, compile and load all files,
+    and then run your test cases.  Save the results of your test cases
+    in a plain text file.  (Use C-x C-w to save the contents of the
+    Lisp buffer.  That will, unfortunately, also kill the Lisp
+    session.  Alternatively, you can just copy-and-paste the contents
+    into a separate file.)
+ 
+
+====================
+  GRADING
+====================
+
+   Approximately 50% on GEN-SEARCH-STARTER functions
+
+   Approximately 20% on implementing the EIGHTS puzzle domain
+
+   Approximately 20% on testing (in both domains)
+
+   Approximately 10% on clarity of code, layout, comments, etc.
+
+==================================
+  SUBMISSION INSTRUCTIONS
+==================================
+
+   ==> Before printing:
+         * Make sure that your NAME appears in the comment block at
+   	     the top of each file.
+         * Delete all extraneous comments from your code!
+             (Of course, keep the meaningful comments!)
+       
+   *** ONLY PRINT OUT THE FOLLOWING FILES ***
+      
+      Your gen-search-starter.lisp file 
+      Your eights.lisp file
+      Your testing.lisp file 
+      Your saved results file (whose name includes your group members' names)
+
+   *** do NOT print out any of the other files ***
+
+   *** STAPLE YOUR PRINTOUTS IN ONE SINGLE BATCH IN THE ORDER LISTED ABOVE!!!
+
+   The directory you SUBMIT ELECTRONICALLY, using submit365, should
+   contain ALL lisp files (not just the ones you print out), and your
+   saved interactions.  Please remove any temporary files (i.e., those
+   whose names end with a ~) before submitting electronically.
+ 
+       submit365  asmt1  YOUR_ASMT_DIRECTORY
+
+====================================
+  Due:  Thursday, Sept. 14 @ Noon
+====================================

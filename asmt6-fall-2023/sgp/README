@@ -1,0 +1,78 @@
+This is Sensory Graphplan (SGP),  release 1.0g.
+
+   This README has been abridged for use in CS 182.
+
+   Original Lisp Graphplan implementation by Mark Peot
+   <peot@rpal.rockwell.com>.  Enhancements by Dave Smith
+   <de2smith@ptolemy.arc.nasa.gov>.  Support for Factored Expansion,
+   PDDL domains, and other optimizations by Dave Smith, Dan Weld
+   <weld@cs.washington.edu>, and Corin Anderson
+   <corin@cs.washington.edu>.
+
+   Copyright (c) Mark Peot, 1995; University of Washington, 1997,
+   1998, 1999.
+
+**************** Description 
+
+This version (1.0) is the first release of Sensory Graphplan.  In this
+release, SGP supports:
+  * Conditional effects using Factored Expansion.
+  * Sensory actions and uncertainty.
+  * Some simple heuristic optimizations (subgoal ordering, action
+    ordering, ground operator instance precomputation).
+
+This minor version (1.0g) is an update to version 1.0.  See the 
+revision history section below for changes.
+
+**************** Known Bugs and Workarounds
+
+
+PDDL defines a fully recursive goal description form.  Currently, SGP
+does not handle the full recursiion.  In particular, negation applies
+only to atomic effects and to equality (that is, (not (P)) is
+legitimate, but (not (exists (?x - square) (P ?x))) will not be
+processed correctly).
+
+The solution to this problem is to simply not have negated compound
+forms in the input domains.
+-----------------------
+A few minor changes need to be made to make SGP runnable with Harlequin
+LispWorks.  First, because the GP package is already defined in
+Harlequin (as the nickname for the graphics-port package), SGP's GP
+package must be renamed GRAPHPLAN.  Change the defpackage line in
+loader.lisp and the in-package line in gp.lisp accordingly.  Second,
+the filenames in the loader.lisp file must have the .lisp ending added
+to them.
+-----------------------
+Sometimes inequality preconditions appear to not hold in SGP.  This 
+anamoly is because the variables in the inequalities are not yet 
+bound.  To fix this problem, either enable type the variables (by 
+adding :typing or :adl to the domain :requirements), or make sure that 
+the variables are bound before the inequality is evaluated.
+
+**************** Revision History
+$Id: README,v 1.12 1999/05/26 04:24:15 corin Exp $
+
+1.0g	Fixed minor bugs related to printing timing statistics.  Added
+	section in README describing how to generate debugging and
+	statistical information.
+1.0f	Fixed bug where SGP would ignore = and (not =) preconditions.
+	Fixed compilation error caused by incorrect struct slot type.
+	Removed unnecessary quotes in loader.lisp, gp.lisp.  Fixed
+	loading errors in mystery.pddl, fridge.pddl.  Added 
+	bomb-world.lisp domain. [5.19.99]
+1.0e	Removed :nicknames from loader.lisp.  Fixed bug with SGP's 
+	graph size statistic reporting.  Added Harlequin LispWorks 
+	workaround to README. Fixed instructions for loading SGP domain
+	in README.  [4.14.99]
+1.0d	Added updated movie watching domain. [1.4.99]
+1.0c	Bug found in and removed from code that precomputes ground
+	instantiations of operators. [10.5.98]
+1.0b	Bug in SGP when producing all possible plans removed.  Bug
+	affected only SGP::PLAN (not GP::PLAN). [9.5.98]
+1.0a	Bug in handling quantification removed.  Support for :situation
+	keyword is PDDL files added. [8.25.98]
+1.0	Original release. [7.20.98]
+
+**************** End of README
+ 

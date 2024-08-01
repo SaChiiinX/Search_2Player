@@ -1,0 +1,305 @@
+;; ========================================
+;;  CMPU-365, Fall 2023
+;;  Monte Carlo Tree Search -- TEMPLATE!
+;; ========================================
+
+;;  Contracts for the following functions used by MCTS algorithm
+;; ----------------------------------------------------------
+;;     GET-ROOT-NODE
+;;     NEW-MC-TREE
+;;     INSERT-NEW-NODE
+;;     SIM-TREE
+;;     SIM-DEFAULT (defined for you) 
+;;     BACKUP
+;;     UCT-SEARCH
+;;     SELECT-MOVE
+
+;;  In addition, for testing, the COMPETE function is defined for you.
+
+
+;;  Your MCTS functions may call the following DOMAIN-DEPENDENT
+;;  functions that are defined in "othello-starter.lisp":
+;; ------------------------------------------------------------------
+;;     COPY-GAME               -- creates a copy of the given othello game board
+;;     MAKE-HASH-KEY-FROM-GAME -- returns list of the form (WHITE-PCS BLACK-PCS WHOSE-TURN)
+;;     WHOSE-TURN              -- returns *BLACK* or *WHITE*
+
+;;  Your MCTS functions may call the following DOMAIN-DEPENDENT
+;;  functions that are defined in "othello-the-rest.lisp":
+;; ------------------------------------------------------------------ 
+;;     DO-MOVE!        --  does a move (destructively modifies game struct)
+;;     LEGAL-MOVES     --  returns VECTOR of legal moves
+;;     GAME-OVER?      --  returns T or NIL
+;;     DEFAULT-POLICY  --  returns random legal move
+
+;;  Your MCTS functions should not need to call any of the MACROs defined
+;;  in "othello-macros.lisp".
+
+
+;;  Note:  If a player has no legal moves, but the game isn't over, then that
+;;         player *must* pass...
+
+
+;;  MC-NODE struct -- a node in the MCTS tree
+;; ----------------------------------------------------------------------------
+;;  KEY:          a hash-table key (compact rep'n of current state of game)
+;;  WHOSE-TURN:   *BLACK* or *WHITE*
+;;  NUM-VISITS:   the number of times this state has been visited
+;;  VECK-MOVES:   a VECTOR of the legal moves from this state
+;;  VECK-VISITS:  a VECTOR recording the number of times each legal move
+;;                   has been visited during MCTS
+;;  VECK-SCORES:  a VECTOR recording the average scores for the legal
+;;                   moves visited during MCTS
+
+(defstruct mc-node
+  key             
+  whose-turn      
+  (num-visits 0)  
+  veck-moves      
+  veck-visits     
+  veck-scores    
+  )
+
+;;  MC-TREE struct -- the MCTS tree
+;; -------------------------------------------------------------
+;;  HASHY:     a hash-table whose entries are (key,value), where
+;;               key = compact repn of state, value = mc-node
+;;  ROOT-KEY:  the hash-table key for the root node of the mcts tree
+
+(defstruct mc-tree
+  (hashy (make-hash-table :test #'equal))      
+  root-key)
+
+;;  GET-ROOT-NODE
+;; ------------------------------------------------------
+;;  INPUT:   TREE, a MCTS struct
+;;  OUTPUT:  The MC-NODE corresponding to the root of the TREE
+
+(defun get-root-node
+    (tree)
+  (gethash (mc-tree-root-key tree) (mc-tree-hashy tree)))
+
+;; -------------------------------------------------
+;;  Easiest to define the following functions
+;;  in the following order (to facilitate testing)
+;; -------------------------------------------------
+
+;;  NEW-MC-TREE
+;; ---------------------------------
+;;  INPUT:   GAME, a game struct
+;;  OUTPUT:  A new MC tree whose root state is derived
+;;           from GAME.
+
+(defun new-mc-tree
+    (game)
+  (make-mc-tree :root-key (make-hash-key-from-game game)))
+
+;;  INSERT-NEW-NODE
+;; -----------------------------------------
+;;  INPUTS:  GAME, a game struct
+;;           TREE, an MC-TREE struct
+;;           KEY, a hash-key representing the state of the game
+;;  OUTPUT:  The newly created and inserted node
+;;  SIDE EFFECT:  Inserts a new node into TREE using KEY.
+
+(defun insert-new-node
+    (game tree key)
+  (let* ((moves (legal-moves game))
+	 (num-moves (length moves))
+	 (nodey (make-mc-node 
+		 :key key
+		 :veck-moves moves
+		 :veck-visits (make-array num-moves :initial-element 0)
+		 :veck-scores (make-array num-moves :initial-element 0)
+		 :whose-turn (whose-turn game))))
+    ;; insert nodey into tree
+    (setf (gethash key (mc-tree-hashy tree)) nodey)
+    ;; return the node
+    nodey))
+
+;;  SELECT-MOVE
+;; ------------------------------------------
+;;  INPUTS:  NODEY, an MC-NODE struct
+;;           C, exploitation-exploration constant
+;;  OUTPUT:  The INDEX of the selected move into the moves vector, or NIL
+;;           if there are no moves.
+
+(defun select-move
+    (nodey c)
+    (let* ((player (mc-node-whose-turn nodey))
+	 (moves (mc-node-veck-moves nodey))
+	 (num-moves (length moves)))
+  (cond
+     ;; No legal moves!
+     ((= num-moves 0)
+      ;; signal failure
+      nil)
+     ;; Only one legal move
+     ((= num-moves 1)
+      ;; return it
+      0)
+     ;; Two or more moves
+     (t
+      ;; Need to find argmax/argmin of 
+      ;;   Q(s,a)  +/-  c*sqrt(log(N(s))/N(s,a))
+      ;; Note:  Can be called with c=0 or c>0.
+      ;;        But if c=0, we can assume n>0 (i.e., *some*
+      ;;          node has already been visited)
+      "insert the rest of the function body here!"
+      ))))
+
+;;  SIM-TREE
+;; --------------------------------------
+;;  INPUTS:  GAME, a game struct
+;;           TREE, an MC-TREE struct
+;;           C, the exploration/exploitation constant
+;;  OUTPUT:  A list of the form (state0 move0 state1 move1 ... statek movek)
+;;    where each state_i is represented by a KEY into the hashtable, and each move_i
+;;    is an INDEX into the MOVES vector of the node assoc with state_i.
+;;    NOTE:  The last statek is the state that was not previously in the tree
+;;           but for which a new node will be created, and move_k (the last
+;;           move) is selected from the info in that node.
+
+(defun sim-tree
+    (game tree c)
+  (let (;; KEY-MOVE-ACC:  used to accumulate the list of STATE/KEYS and MOVES/INDICES
+	(key-move-acc nil)
+	;; HASHY:  the hash-table where KEY represents STATE; and VALUE is the corresponding NODE
+	(hashy (mc-tree-hashy tree)))
+    ;; Keep going as long as the game is not over...
+    (while (not (game-over? game))
+      (let* (;; KEY:  Hash key for current state of game
+	     (key (make-hash-key-from-game game))
+	     ;; NODEY:  The MC-NODE corresponding to KEY (or NIL if not in tree)
+	     (nodey (gethash key hashy)))
+	;; Case 1:  When key not yet in tree...
+	(when (null nodey)
+	  (let* ((new-node (insert-new-node (game tree key)))
+		 (moves (mc-node-veck-moves new-node))
+		 (move-index nil))
+	    ;;(incf (mc-node-num-visits new-node))
+	    (setf move-index (select-move new-node c))
+	    (apply do-move! game nil (aref moves move-index))
+	    (setf key-move-acc (cons (aref moves move-index) (cons key key-move-acc)))))
+	
+	(let* ((moves (mc-node-veck-moves nodey))
+	       (move-inedx (select-move new-node c)))
+	  ;;(incf (mc-node-num-visits new-node))
+	  (apply do-move! game nil (aref moves move-index))
+	  (setf key-move-acc (cons (aref moves move-index) (cons key key-move-acc))))
+	))
+    ;; After the WHILE... return the reverse accumulated key/move list
+    (reverse key-move-acc)))
+ 
+;;  SIM-DEFAULT -- defined for you!
+;; ----------------------------------------------
+;;  INPUT:   GAME, a game struct
+;;  OUTPUT:  The result of following the game's default policy
+;;             (domain-dependent method)
+
+(defun sim-default
+    (game)
+  (default-policy game))
+
+;;  BACKUP
+;; ---------------------------------------------------
+;;  INPUTS:  HASHY, the hash-table for the MCTS
+;;           KEY-MOVE-ACC, the accumulated list of KEYs and MOVEs
+;;              from a simulation run
+;;           RESULT, the result (from black's perspective) of the 
+;;              recently played out simulation
+;;  OUTPUT:  doesn't matter
+;;  SIDE EFFECT:  Updates the relevant nodes in the MC-TREE/HASHY
+
+(defun backup
+    (hashy key-move-acc result)  
+  (let ((index 0)
+	(size (length key-move-acc)))
+    (while (index < size)
+      (let* ((key (aref key-move-acc index))
+	     (indy (aref key-move-acc (+ 1 index)))
+	     (node (gethash key hashy))
+	     (score-offset (/ (- result (aref vec-holder2 indy)) (aref (mc-node-vec-visits node) indy))))
+	(incf (mc-node-num-visits node))
+	(incf (aref (mc-node-vec-visits node) indy))
+	(incf (aref (mc-node-vec-scores node) indy) score-offset)
+	(incf index 2))))
+  )
+
+;;  UCT-SEARCH
+;; ---------------------------------
+;;  INPUTS:  ORIG-GAME, a game struct
+;;           NUM-SIMS, a positive integer
+;;           C, the exploration/exploitation parameter
+;;  OUTPUT:  Best move from that state determined by
+;;             doing *NUM-SIMS* simulations of MCTS.
+
+;;  The following global parameter can be used to decide whether
+;;  UCT-SEARCH should print out stats about the current round
+;;  of MCTS.  The COMPETE function sets *verbose* to T; the
+;;  COMPETE-NO-PRINTING function sets it to NIL.  
+
+(defparameter *verbose* t) 
+
+
+(defun uct-search
+    (orig-game num-sims c)
+  (let* ((tree (new-mc-tree orig-game))
+	 (hashy (mc-tree-hashy tree)))
+    ;; Use DOTIMES for the number of simulations
+    ;;  For each iteration/simulation:
+    ;;    use a COPY of the game struct
+    ;;    fetch the key-move-acc list generated by calling SIM-TREE
+    ;;    get the RESULT of playing out the game using SIM-DEFAULT
+    ;;    and then BACKUP the results
+    
+    ;; After all the simulations, select the best move (using c = 0 because we are not exploring anymore)
+    ;; print out some stats
+    ;; and return the move    
+  
+    "insert function body here!"))
+
+
+;;  COMPETE -- defined for you!
+;; ------------------------------------------------------------------------------
+;;  INPUTS:  BLACK-NUM-SIMS, the number of simulations for each of black's moves
+;;           BLACK-C, the exploration/exploitation constant used by black
+;;           WHITE-NUM-SIMS, the number of simulations for each of white's moves
+;;           WHITE-C, the exploration/exploitation constant used by white
+;;  OUTPUT:  Don't care
+;;  SIDE EFFECT:  Displays the entire game using UCT-SEARCH to compute best moves
+;;    for both players according to the specified parameters.
+
+(defun compete
+    (black-num-sims black-c white-num-sims white-c)
+  (let ((g (new-othello)))
+    (while (not (game-over? g))
+      (cond
+       ((eq (whose-turn g) *black*)
+	(format t "BLACK'S TURN!~%")
+	(format t "~A~%" 
+		(apply #'do-move! g nil (uct-search g black-num-sims black-c))))
+       (t
+	(format t "WHITE'S TURN!~%")
+	(format t "~A~%"
+		(apply #'do-move! g nil (uct-search g white-num-sims white-c))))))))
+
+
+;;  COMPETE-NO-PRINTING
+;; --------------------------------------------------
+;;  Same as COMPETE, but only shows the end result
+
+(defun compete-no-printing
+    (black-num-sims black-c white-num-sims white-c)
+  (let ((g (new-othello)))
+    (while (not (game-over? g))
+      (cond
+       ((eq (whose-turn g) *black*)
+	(format t "B ")
+	(apply #'do-move! g nil (uct-search g black-num-sims black-c)))
+       (t
+	(format t "W ")
+	(apply #'do-move! g nil (uct-search g white-num-sims white-c)))))
+    (format t "~%~A~%" g)))
+
+

@@ -1,0 +1,57 @@
+;;  Make utility for CS 365
+
+(in-package :user)
+
+(load "simple-defsys.lisp")
+
+(define-system "asmt6"
+  ;; sgp 
+  "sgp/loader"
+  "sgp/domains"
+  "sgp/logic"
+  "sgp/gp"
+  ;; ucpop: basics
+  "ucpop/loader"
+  "ucpop/variable"
+  "ucpop/struct"
+  "ucpop/choose"
+  "ucpop/rules"
+  "ucpop/plan-utils"
+  ;; ucpop: meat
+  "ucpop/ucpop"
+  "ucpop/scr"
+  "ucpop/zlifo"
+  "ucpop/interface"
+  "ucpop/safety"
+  "ucpop/controllers"
+  ;; ucpop: domains/problems (defined in LISP files)
+  "blocky" ;; (new) blocky-v2 domain / suss-v2 problem
+  "blocks-world" ;; (original) blocks-world domain / sussman-anomaly
+                 ;; and tower-invert6 problems
+  "tire-world" ;; (original) flat-tire domain / fixit problem
+  "monkey" ;; monkey-world domain / monkey problem 
+  ;;  "sgp-better" ;; template file
+  ;;  "ucpop-better" ;; template file
+  ;; NOTE:  SGP domains/problems defined in PDDL files
+  ;; "blocks-world.pddl" -- blocks-world domain / sussman-anomaly and
+  ;;                        tower-invert6 problems
+  ;; "monkey.pddl" -- monkey domain / monkey problem
+  ;; (incomplete) "monk.pddl" -- monk domain / monk problem
+  ;; "tire-world.pddl" -- flat-tire domain / fixit problem
+  ;; "sgp-better.pddl" -- template
+  ;; "ucpop-better.pddl" -- template
+  )
+
+;; EOF
+
+
+
+
+
+
+
+
+
+
+
+
